@@ -24,6 +24,10 @@ import Search from '@/pages/Search';
 import Onboarding from '@/pages/Onboarding';
 import AZList from '@/pages/AZList';
 import Settings from '@/pages/Settings';
+import TermsOfService from '@/pages/Legal/TermsOfService';
+import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy';
+import CookiePreferences from '@/pages/Legal/CookiePreferences';
+import AIRecommender from '@/pages/AIRecommender';
 
 const App = () => {
   const { currentUser, isOnboarded } = useAuth();
@@ -57,6 +61,10 @@ const App = () => {
       <Route path="/search" element={<Search />} />
       <Route path="/az-list" element={<AZList />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/cookies" element={<CookiePreferences />} />
+      <Route path="/ai-match" element={<AIRecommender />} />
       <Route path="/watch/:id" element={<Watch />} />
 
       {/* Play page – dedicated player */}
