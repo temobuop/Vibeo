@@ -13,6 +13,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
+import { LayoutProvider } from './context/LayoutContext';
 import { AuthProvider } from './context/AuthContext';
 import App from './App';
 
@@ -38,7 +39,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider>
-            <App />
+            <LayoutProvider>
+              <App />
+            </LayoutProvider>
           </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>

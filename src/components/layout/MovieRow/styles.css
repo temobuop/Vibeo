@@ -82,24 +82,24 @@
 
 .row-card-wrap {
     flex: 0 0 auto;
-    width: 140px;
+    width: var(--card-min-width);
     /* mobile default */
 }
 
 @media (min-width: 600px) {
     .row-card-wrap {
-        width: 160px;
+        width: calc(var(--card-min-width) + 20px);
     }
 }
 
 @media (min-width: 900px) {
     .row-card-wrap {
-        width: 180px;
+        width: calc(var(--card-min-width) + 40px);
     }
 }
 
 @media (min-width: 1200px) {
     .row-card-wrap {
-        width: 200px;
+        width: calc(var(--card-min-width) + 60px);
     }
 }

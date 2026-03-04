@@ -1,0 +1,12 @@
+[data-theme="aurora"] {
+    --c-bg: #050b14;
+    --c-bg2: #0a1425;
+    --c-surface: #0f1c35;
+    --c-surface2: #162645;
+    --c-surface3: #21355a;
+    --c-border: rgba(52, 211, 153, 0.1);
+    --c-border2: rgba(52, 211, 153, 0.2);
+    --c-accent: #34d399;
+    --c-accent-lt: #6ee7b7;
+    --c-accent-glow: rgba(52, 211, 153, 0.4);
+}
