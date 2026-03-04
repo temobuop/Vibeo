@@ -52,10 +52,11 @@
 }
 
 /* Grid & Cards */
-.search-grid {
+.search-results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-min-width) + 40px), 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
 }
 
 .search-card-wrap {
@@ -69,13 +70,12 @@
 .gemini-title {
     background: linear-gradient(90deg, #A259FF, #FF62A5, #FFB84D);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 0 20px rgba(162, 89, 255, 0.4);
 }
 
-.gemini-card-wrap {
-    /* Slight glow effect to differentiate AI suggestions */
-}
+/* Slight glow effect to differentiate AI suggestions */
 
 .gemini-card-wrap::after {
     content: '';
@@ -188,9 +188,9 @@
         gap: 1.5rem;
     }
 
-    .search-grid {
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
-        gap: 0.75rem;
+    .search-results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--card-min-width) + 20px)), 1fr));
+        gap: 1rem;
         justify-content: center;
     }
 }
