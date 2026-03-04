@@ -1,9 +1,9 @@
 /**
  * Dashboard.jsx  ─ Homepage "/"
  * ═══════════════════════════════════════════════════════════════
- * Netflix-style streaming homepage:
- *  • Full-width hero spotlight banner (first 5 trending movies)
- *  • Horizontal carousel rows for each category
+ * Premium streaming homepage:
+ *  • Full-width hero spotlight banner (personalized or trending)
+ *  • Unique horizontal carousel rows from diverse TMDB endpoints
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -11,14 +11,13 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // ── Reusable components ──────────────────────────────────────
-// ── Reusable components ──────────────────────────────────────
 import Header from '@/components/layout/Header';
 import HeroBanner from '@/components/layout/HeroBanner';
 import MovieRow from '@/components/layout/MovieRow';
 import Footer from '@/components/layout/Footer';
 
 // ── Data sources ──────────────────────────────────────────────
-import { useMovies } from '@/hooks/useMovies';
+import { useHomePageData } from '@/hooks/useHomePageData';
 import { useSpotlightMovies } from '@/hooks/useSpotlightMovies';
 import { useMoodMatchMovies } from '@/hooks/useMoodMatchMovies';
 
@@ -26,19 +25,14 @@ const Dashboard = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Live TMDB trending data
-    const { movies: trending, loading } = useMovies();
-
-    // Derived slices for different sections
-    const topRated = [...trending].sort((a, b) => b.vote_average - a.vote_average).slice(0, 12);
-    const actionMix = trending.filter((_, i) => i % 2 === 0).slice(0, 12);
-    const dramaMix = trending.filter((_, i) => i % 2 !== 0).slice(0, 12);
+    // Diverse TMDB data for each row
+    const { trending, nowPlaying, topRated, popular, upcoming, loading } = useHomePageData();
 
     const handleCardClick = (movie) => navigate(`/watch/${movie.id}`);
 
     // Personalized recommendations
-    const { movies: spotlightMovies, loading: spotlightLoading } = useSpotlightMovies();
-    const { movies: moodMatches, loading: moodLoading } = useMoodMatchMovies();
+    const { movies: spotlightMovies } = useSpotlightMovies();
+    const { movies: moodMatches } = useMoodMatchMovies();
 
     // Effect for auto-scrolling to section
     useEffect(() => {
@@ -47,7 +41,6 @@ const Dashboard = () => {
             setTimeout(() => {
                 const element = document.getElementById(id);
                 if (element) {
-                    // Offset by 80px to account for the sticky header
                     const y = element.getBoundingClientRect().top + window.scrollY - 80;
                     window.scrollTo({ top: y, behavior: 'smooth' });
                 }
@@ -77,8 +70,14 @@ const Dashboard = () => {
                                 onCardClick={handleCardClick}
                             />
                             <MovieRow
+                                id="now-playing"
+                                title="Now Playing in Theaters"
+                                movies={nowPlaying}
+                                onCardClick={handleCardClick}
+                            />
+                            <MovieRow
                                 id="top-rated"
-                                title="Top Rated"
+                                title="Top Rated of All Time"
                                 movies={topRated}
                                 onCardClick={handleCardClick}
                             />
@@ -92,21 +91,15 @@ const Dashboard = () => {
                                 />
                             )}
                             <MovieRow
-                                id="action"
-                                title="Action & Adventure"
-                                movies={actionMix}
+                                id="popular"
+                                title="Popular Worldwide"
+                                movies={popular}
                                 onCardClick={handleCardClick}
                             />
                             <MovieRow
-                                id="drama"
-                                title="Drama"
-                                movies={dramaMix}
-                                onCardClick={handleCardClick}
-                            />
-                            <MovieRow
-                                id="new-release"
-                                title="New Releases"
-                                movies={[...trending].reverse().slice(0, 12)}
+                                id="upcoming"
+                                title="Coming Soon"
+                                movies={upcoming}
                                 onCardClick={handleCardClick}
                             />
                         </>
@@ -120,4 +113,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
