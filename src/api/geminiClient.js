@@ -2,7 +2,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { collection, query as firestoreQuery, where, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { stopWords } from "../utils/stopWords";
-import { db } from "../firebase";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const modelLLM = import.meta.env.VITE_GEMINI_MODEL;
