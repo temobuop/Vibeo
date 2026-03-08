@@ -154,6 +154,12 @@
     overflow-y: auto;
     height: 100%;
     scroll-padding-top: 1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.browse-grid-container::-webkit-scrollbar {
+    display: none;
 }
 
 .browse-grid {
@@ -205,6 +211,12 @@
     overflow-y: auto;
     border-left: 1px solid var(--c-border, rgba(255, 255, 255, 0.06));
     background: var(--c-surface, rgba(12, 12, 22, 0.98));
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.browse-detail-panel::-webkit-scrollbar {
+    display: none;
 }
 
 /* Hidden on desktop, visible via media query on mobile */
