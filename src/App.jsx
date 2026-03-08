@@ -13,12 +13,27 @@
 import { Suspense, lazy, useEffect, useLayoutEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import { useLayout } from '@/context/LayoutContext';
+import { UserMoviesProvider } from '@/context/UserMoviesContext';
+
+/**
+ * Utility to Scroll to top on route change
+ */
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 // Core Components (Keep synchronous for immediate load)
-import Dashboard from '@/pages/Dashboard';
-import VibeyChat from '@/components/common/VibeyChat';
 
 // Lazy Loaded Pages
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const VibeyChat = lazy(() => import('@/components/common/VibeyChat'));
 const Watch = lazy(() => import('@/pages/Watch'));
 const Play = lazy(() => import('@/pages/Play'));
 const Profile = lazy(() => import('@/pages/Profile'));
@@ -36,7 +51,7 @@ const VibeyPage = lazy(() => import('@/pages/VibeyPage'));
 const ThemeStore = lazy(() => import('@/pages/ThemeStore'));
 
 /**
- * Premium Loading Fallback
+ * Premium Loading Fallback - Cinematic & Polished
  */
 const LoadingScreen = () => (
   <div style={{
@@ -46,30 +61,97 @@ const LoadingScreen = () => (
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'var(--c-bg)',
-    gap: '20px',
-    overflow: 'hidden'
+    background: 'radial-gradient(circle at center, var(--c-surface) 0%, var(--c-bg) 100%)',
+    gap: '32px',
+    overflow: 'hidden',
+    position: 'fixed',
+    inset: 0,
+    zIndex: 9999
   }}>
-    <div className="navbar-logo" style={{ fontSize: '2rem' }}>
-      <span className="logo-icon">V</span>
-      <span className="logo-text">Vibeo</span>
-    </div>
     <div style={{
-      width: '40px',
-      height: '40px',
-      border: '3px solid var(--c-surface2)',
-      borderTopColor: 'var(--c-accent)',
-      borderRadius: '50%',
-      animation: 'spin 1s linear infinite'
-    }} />
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '12px',
+      transform: 'translateY(-20px)',
+      animation: 'float 3s ease-in-out infinite'
+    }}>
+      <div className="navbar-logo" style={{
+        fontSize: '3rem',
+        display: 'flex',
+        alignItems: 'center',
+        filter: 'drop-shadow(0 0 20px var(--c-accent-glow))'
+      }}>
+        <span className="logo-icon" style={{
+          background: 'var(--c-accent)',
+          color: 'white',
+          width: '50px',
+          height: '50px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '12px',
+          fontWeight: '800',
+          marginRight: '12px'
+        }}>V</span>
+        <span className="logo-text" style={{
+          color: 'var(--c-text)',
+          fontWeight: '700',
+          letterSpacing: '-1px'
+        }}>ibeo</span>
+      </div>
+
+      <div style={{
+        fontSize: '0.9rem',
+        color: 'var(--c-text2)',
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        opacity: 0.8,
+        animation: 'pulse-text 2s ease-in-out infinite'
+      }}>
+        Loading Cinematic Experience
+      </div>
+    </div>
+
+    <div style={{
+      width: '200px',
+      height: '3px',
+      background: 'var(--c-surface2)',
+      borderRadius: '10px',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        height: '100%',
+        width: '40%',
+        background: 'linear-gradient(90deg, transparent, var(--c-accent), transparent)',
+        animation: 'loading-bar 1.5s infinite ease-in-out'
+      }} />
+    </div>
+
     <style>{`
-      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes float {
+        0%, 100% { transform: translateY(-20px); }
+        50% { transform: translateY(-30px); }
+      }
+      @keyframes pulse-text {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+      @keyframes loading-bar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
     `}</style>
   </div>
 );
 
 const App = () => {
   const { currentUser, isOnboarded } = useAuth();
+  const { showVibeyChat } = useLayout();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -117,56 +199,62 @@ const App = () => {
      * Each <Route> maps a URL path to a page component.
      */
     <>
-      <Suspense fallback={<LoadingScreen />}>
-        <Routes>
-          {/* Homepage – Discovery Dashboard */}
-          <Route path="/" element={<Dashboard />} />
+      <UserMoviesProvider>
+        <ScrollToTop />
+        {location.pathname !== '/onboarding' && <Header />}
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            {/* Homepage – Discovery Dashboard */}
+            <Route path="/" element={<Dashboard />} />
 
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/browse/:categoryId" element={<Browse />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/az-list" element={<AZList />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/cookies" element={<CookiePreferences />} />
-          <Route path="/ai-match" element={<AIRecommender />} />
-          <Route path="/smart-search" element={<SmartSearch />} />
-          <Route path="/vibey" element={<VibeyPage />} />
-          <Route path="/watch/:id" element={<Watch />} />
-          <Route path="/theme-store" element={<ThemeStore />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/browse/:categoryId" element={<Browse />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/az-list" element={<AZList />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/cookies" element={<CookiePreferences />} />
+            <Route path="/ai-match" element={<AIRecommender />} />
+            <Route path="/smart-search" element={<SmartSearch />} />
+            <Route path="/vibey" element={<VibeyPage />} />
+            <Route path="/watch/:id" element={<Watch />} />
+            <Route path="/theme-store" element={<ThemeStore />} />
 
-          {/* Play page – dedicated player */}
-          <Route path="/play/:id" element={<Play />} />
+            {/* Play page – dedicated player */}
+            <Route path="/play/:id" element={<Play />} />
 
-          {/* 404 fallback */}
-          <Route
-            path="*"
-            element={
-              <div
-                style={{
-                  minHeight: '100vh',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '1rem',
-                  color: '#8b8a9a',
-                }}
-              >
-                <h1 style={{ fontSize: '1.5rem', color: '#f1f0f5' }}>404 – Page Not Found</h1>
-                <a href="/" style={{ color: '#a855f7', fontWeight: 600 }}>
-                  ← Back to Vibeo
-                </a>
-              </div>
-            }
-          />
-        </Routes>
-      </Suspense>
+            {/* 404 fallback */}
+            <Route
+              path="*"
+              element={
+                <div
+                  style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '1rem',
+                    color: '#8b8a9a',
+                  }}
+                >
+                  <h1 style={{ fontSize: '1.5rem', color: '#f1f0f5' }}>404 – Page Not Found</h1>
+                  <a href="/" style={{ color: '#a855f7', fontWeight: 600 }}>
+                    ← Back to Vibeo
+                  </a>
+                </div>
+              }
+            />
+          </Routes>
+        </Suspense>
 
-      {/* Vibey AI Chatbot — global floating overlay (Hidden on Settings page) */}
-      {location.pathname !== '/settings' && <VibeyChat />}
+        <Footer />
+
+        {/* Vibey AI Chatbot — global floating overlay (Hidden on Settings page or if disabled in settings) */}
+        {showVibeyChat && location.pathname !== '/settings' && <VibeyChat />}
+      </UserMoviesProvider>
     </>
   );
 };
