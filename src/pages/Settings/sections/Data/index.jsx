@@ -4,6 +4,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useLayout } from '@/context/LayoutContext';
 import { useUserMovies } from '@/hooks/useUserMovies';
 import ConfirmationModal from '@/components/common/ConfirmationModal';
+import VibeStats from '@/components/common/VibeStats';
 import './styles.css';
 
 const DataSection = () => {
@@ -56,7 +57,15 @@ const DataSection = () => {
 
     return (
         <div className="settings-section animate-fade-in data-section">
-            <h2><span className="icon"><Database size={20} /></span> Data & Import</h2>
+            <h2><span className="icon"><Database size={20} /></span> Data & Insights</h2>
+
+            <div className="data-insights-container">
+                <VibeStats
+                    watchlist={watchlist}
+                    favorites={[]}
+                    totalWatchTime={totalWatchTime}
+                />
+            </div>
 
             <div className="data-grid">
                 {/* Backup / Export */}
