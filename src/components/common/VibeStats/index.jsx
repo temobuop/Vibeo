@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { formatWatchTime } from '@/utils/timeUtils';
 import './styles.css';
 
@@ -37,13 +37,15 @@ const VibeStats = ({ watchlist = [], favorites = [], totalWatchTime, isHeaderVar
         },
     ], []);
 
-    // 2. Calculate Dimension Scores
+    const [activeDimension, setActiveDimension] = useState(null);
+
+    const analyzedMovies = useMemo(() => watchlist.filter(m => m.status === 'completed'), [watchlist]);
+
+    // 2. Calculate Dimension Scores and Movie Mapping
     const stats = useMemo(() => {
-        const completedMovies = watchlist.filter(m => m.status === 'completed');
-        // Merge completed movies with initial onboarding favorites for better DNA representation
-        const analyzedMovies = [...favorites, ...completedMovies];
 
         const scores = { adrenaline: 0, heart: 0, imagination: 0, reality: 0, vibe: 0 };
+        const mapping = { adrenaline: [], heart: [], imagination: [], reality: [], vibe: [] };
         let maxCount = 0;
 
         analyzedMovies.forEach(movie => {
@@ -52,6 +54,10 @@ const VibeStats = ({ watchlist = [], favorites = [], totalWatchTime, isHeaderVar
                     dimensions.forEach(dim => {
                         if (dim.genres.includes(genreId)) {
                             scores[dim.key]++;
+                            // Keep track of unique movies per dimension
+                            if (!mapping[dim.key].some(m => m.id === movie.id)) {
+                                mapping[dim.key].push(movie);
+                            }
                         }
                     });
                 });
@@ -61,18 +67,34 @@ const VibeStats = ({ watchlist = [], favorites = [], totalWatchTime, isHeaderVar
         // Find max for scaling
         Object.values(scores).forEach(val => { if (val > maxCount) maxCount = val; });
 
-        // Normalize to 0-100 range for the chart (min 15% for visibility)
+        // Normalize to 0-100 range and attach movie details
         return dimensions.map(dim => ({
             ...dim,
             value: maxCount > 0 ? Math.max(15, (scores[dim.key] / maxCount) * 100) : 20,
-            raw: scores[dim.key]
+            raw: scores[dim.key],
+            movies: mapping[dim.key],
+            percentage: maxCount > 0 ? Math.round((scores[dim.key] / Object.values(scores).reduce((a, b) => a + b, 0)) * 100) : 20
         }));
-    }, [watchlist, favorites, dimensions]);
+    }, [watchlist, dimensions]);
+
+    // Persona mapping based on dominant trait
+    const personaMap = {
+        adrenaline: { title: "The Thrill-Seeker", desc: "You thrive on high stakes, fast pacing, and explosive action sequences." },
+        heart: { title: "The Empath", desc: "You connect deeply with character-driven stories and emotional resonance." },
+        imagination: { title: "The Dreamer", desc: "You escape into extraordinary worlds of fantasy, sci-fi, and animation." },
+        reality: { title: "The Truth-Finder", desc: "You prefer grounded stories, historical depth, and complex crime or mystery." },
+        vibe: { title: "The Light-Hearted", desc: "You prefer comedies and feel-good stories to keep the mood elevated." }
+    };
+
+    const dominantTrait = [...stats].sort((a, b) => b.raw - a.raw)[0];
+    const persona = personaMap[dominantTrait?.key] || { title: "The Explorer", desc: "You are currently building your cinematic identity." };
+
+    const [showFullBreakdown, setShowFullBreakdown] = useState(false);
 
     // 3. SVG Radar Chart Points Calculation
-    const size = 280;
+    const size = 320;
     const center = size / 2;
-    const radius = size * 0.38;
+    const radius = size * 0.35;
 
     const getPoint = (index, total, value) => {
         const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
@@ -90,99 +112,131 @@ const VibeStats = ({ watchlist = [], favorites = [], totalWatchTime, isHeaderVar
 
     return (
         <div className={`vibe-stats card-glow ${isHeaderVariant ? 'vibe-stats--header' : ''}`}>
-            <div className="vibe-stats__header">
-                <div className="vibe-stats__title-group">
-                    <h3>Taste Visualization</h3>
-                    <p className="vibe-stats__subtitle">Real-time cinematic profile</p>
-                </div>
-                <div className="vibe-stats__total">
-                    <span className="total-label">Total Immersion</span>
-                    <span className="total-value">{formatWatchTime(watchTimeMinutes)}</span>
-                </div>
-            </div>
+            <div className="vibe-stats__main-layout">
+                {/* Visual Side (Radar) */}
+                <div className="vibe-stats__visual">
+                    <div className="radar-container" onMouseLeave={() => setActiveDimension(null)}>
+                        <svg viewBox={`0 0 ${size} ${size}`} className="radar-svg">
+                            {[0.2, 0.4, 0.6, 0.8, 1.0].map((r, i) => (
+                                <circle key={i} cx={center} cy={center} r={radius * r} className="radar-grid-circle" />
+                            ))}
 
-            <div className="vibe-stats__content">
-                {/* Radar Chart Container */}
-                <div className="radar-container">
-                    <svg viewBox={`0 0 ${size} ${size}`} className="radar-svg">
-                        {/* Background Circles (Grid) */}
-                        {[0.2, 0.4, 0.6, 0.8, 1.0].map((r, i) => (
-                            <circle
-                                key={i}
-                                cx={center}
-                                cy={center}
-                                r={radius * r}
-                                className="radar-grid-circle"
+                            {stats.map((_, i) => {
+                                const { x, y } = getPoint(i, stats.length, 100);
+                                return <line key={i} x1={center} y1={center} x2={x} y2={y} className="radar-axis-line" />;
+                            })}
+
+                            <polygon
+                                points={polygonPoints}
+                                className={`radar-polygon ${activeDimension ? 'dim-hover' : ''}`}
                             />
-                        ))}
 
-                        {/* Axis Lines */}
-                        {stats.map((_, i) => {
-                            const { x, y } = getPoint(i, stats.length, 100);
+                            {stats.map((s, i) => {
+                                const { x, y } = getPoint(i, stats.length, 100);
+                                return (
+                                    <line
+                                        key={`hover-${i}`}
+                                        x1={center} y1={center} x2={x} y2={y}
+                                        stroke="transparent" strokeWidth="40"
+                                        onMouseEnter={() => setActiveDimension(s)}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                );
+                            })}
+                        </svg>
+
+                        {stats.map((s, i) => {
+                            const { x, y } = getPoint(i, stats.length, 125);
+                            const isActive = activeDimension?.key === s.key;
                             return (
-                                <line
-                                    key={i}
-                                    x1={center} y1={center}
-                                    x2={x} y2={y}
-                                    className="radar-axis-line"
-                                />
+                                <div
+                                    key={s.key}
+                                    className={`radar-label ${isActive ? 'active' : ''}`}
+                                    style={{
+                                        left: `${(x / size) * 100}%`,
+                                        top: `${(y / size) * 100}%`,
+                                        transform: 'translate(-50%, -50%)',
+                                    }}
+                                    onMouseEnter={() => setActiveDimension(s)}
+                                >
+                                    <span className="label-icon">{s.icon}</span>
+                                    <span className="label-text">{s.label}</span>
+                                    {isActive && <span className="label-pct">{s.percentage}%</span>}
+                                </div>
                             );
                         })}
-
-                        {/* The Data Polygon */}
-                        <polygon points={polygonPoints} className="radar-polygon" />
-
-                        {/* Data Points */}
-                        {stats.map((s, i) => {
-                            const { x, y } = getPoint(i, stats.length, s.value);
-                            return <circle key={i} cx={x} cy={y} r="3" className="radar-point" />;
-                        })}
-                    </svg>
-
-                    {/* Labels Positioning (Absolute Overlay) */}
-                    {stats.map((s, i) => {
-                        const { x, y } = getPoint(i, stats.length, 125); // Push labels further out
-                        return (
-                            <div
-                                key={s.key}
-                                className="radar-label"
-                                style={{
-                                    left: `${(x / size) * 100}%`,
-                                    top: `${(y / size) * 100}%`,
-                                    transform: 'translate(-50%, -50%)'
-                                }}
-                            >
-                                <span className="label-icon">{s.icon}</span>
-                                <span className="label-text">{s.label}</span>
-                            </div>
-                        );
-                    })}
+                    </div>
                 </div>
 
-                {/* Info / Insights */}
-                <div className="vibe-insights">
-                    <div className="insight-card">
-                        <h4>Completed Journey</h4>
-                        <div className="insight-grid">
-                            <div className="insight-item">
-                                <span className="val">{watchlist.filter(m => m.status === 'completed').length}</span>
-                                <span className="lab">Titles</span>
-                            </div>
-                            <div className="insight-item">
-                                <span className="val">{Math.round(watchTimeMinutes / 60)}</span>
-                                <span className="lab">Hours</span>
-                            </div>
+                {/* Identity Side (Info) */}
+                <div className="vibe-stats__identity">
+                    <div className="vibe-stats__identity-header">
+                        <div className="badge">Cinematic DNA</div>
+                        <h3>Taste Visualization</h3>
+                    </div>
+
+                    <div className="persona-card-v2">
+                        <div className="persona-header">
+                            <h4 className="persona-title">{persona.title}</h4>
+                            <div className="persona-subtitle">Dominant Trait: {dominantTrait?.label}</div>
+                        </div>
+                        <p className="persona-desc">{persona.desc}</p>
+                    </div>
+
+                    <div className="identity-metrics">
+                        <div className="metric">
+                            <span className="metric-label">Completed</span>
+                            <span className="metric-value">{analyzedMovies.length} <small>Titles</small></span>
+                        </div>
+                        <div className="metric">
+                            <span className="metric-label">Immersion</span>
+                            <span className="metric-value">{Math.round(watchTimeMinutes / 60)} <small>Hours</small></span>
                         </div>
                     </div>
 
-                    <div className="top-dimension">
-                        <span className="top-dim-label">Dominant Trait</span>
-                        <div className="top-dim-value">
-                            {stats.sort((a, b) => b.raw - a.raw)[0]?.label || 'Exploring'}
+                    <div className="top-contributors-mini">
+                        <div className="contrib-header">Profile Influencers</div>
+                        <div className="contrib-pills">
+                            {analyzedMovies.slice(0, 4).map(m => (
+                                <div key={m.id} className="mini-pill">{m.title}</div>
+                            ))}
+                            {analyzedMovies.length > 4 && <div className="mini-pill more">+{analyzedMovies.length - 4}</div>}
                         </div>
                     </div>
+
+                    <button
+                        className={`breakdown-toggle ${showFullBreakdown ? 'active' : ''}`}
+                        onClick={() => setShowFullBreakdown(!showFullBreakdown)}
+                    >
+                        {showFullBreakdown ? 'Hide Full Analysis' : 'View Full Breakdown'}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showFullBreakdown ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
                 </div>
             </div>
+
+            {/* Expandable Breakdown */}
+            {showFullBreakdown && (
+                <div className="dimension-details-compact fade-in">
+                    <div className="dimension-grid-compact">
+                        {stats.map(s => (
+                            <div key={s.key} className="dim-card-compact">
+                                <div className="dim-card-top">
+                                    <span className="dim-icon">{s.icon}</span>
+                                    <span className="dim-name">{s.label}</span>
+                                    <span className="dim-pct">{s.percentage}%</span>
+                                </div>
+                                <div className="dim-bar-bg"><div className="dim-bar-fill" style={{ width: `${s.percentage}%` }}></div></div>
+                                <div className="dim-titles-mini">
+                                    {s.movies.slice(0, 2).map(m => m.title).join(', ')}
+                                    {s.movies.length > 2 && '...'}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
