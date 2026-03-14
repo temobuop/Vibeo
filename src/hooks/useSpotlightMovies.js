@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchTMDB } from '../api/tmdbClient';
-import { useAuth } from '../context/AuthContext';
+import { useUserMoviesContext } from '../context/UserMoviesContext';
 
 export const useSpotlightMovies = () => {
-    const { favoriteMovies } = useAuth();
+    const { favoriteMovies } = useUserMoviesContext();
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);
 
